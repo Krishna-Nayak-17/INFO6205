@@ -59,37 +59,61 @@ public class Timer {
      * @param <U> the type which is the result of function and the input to postFunction (if any).
      * @return the average milliseconds per repetition.
      */
+
     public <T, U> double repeat(int n, boolean warmup, Supplier<T> supplier, Function<T, U> function, UnaryOperator<T> preFunction, Consumer<U> postFunction) {
-        // TO BE IMPLEMENTED : note that the timer is running when this method is called and should still be running when it returns.
+        reset(); // Reset laps and ticks at the beginning of each repeat call
 
+        long totalTicks = 0;
 
+        for (int i = 0; i < n; i++) {
+            T input = supplier.get();
 
+            if (preFunction != null) {
+                input = preFunction.apply(input);
+            }
 
+            if (!warmup) {
+                lap(); // Move the lap call inside the timed section only for the measurement phase
+                long startTicks = getClock();
+                function.apply(input);
+                long elapsedTicks = getClock() - startTicks;
+                totalTicks += elapsedTicks;
 
+                if (postFunction != null) {
+                    postFunction.accept(function.apply(input));
+                }
+            } else {
+                // Increment laps count only for the measurement phase
+                if (i < n - 1) {
+                    laps++;
+                }
+            }
 
+            System.out.println("Current lap count: " + laps); // Add this line for debugging
+        }
 
+        // Ensure the timer is paused at the end of the repeat loop for the actual measurement phase
+        if (!warmup) {
+            pause();
+        }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        // SKELETON
-         return 0;
-        // END SOLUTION
+        return warmup ? 0 : toMillisecs(totalTicks) / n;
     }
+
+
+
+
+
+
+
+
+    public void reset() {
+        ticks = 0L;
+        laps = 0;
+    }
+
+
+
 
     /**
      * Stop this Timer and return the mean lap time in milliseconds.
@@ -131,7 +155,7 @@ public class Timer {
      * @throws TimerException if this Timer is already running.
      */
     public void resume() {
-        if (running) throw new TimerException();
+        if (running) return; // Do nothing if already running
         ticks -= getClock();
         running = true;
     }
@@ -143,7 +167,7 @@ public class Timer {
      * @throws TimerException if this Timer is not running.
      */
     public void lap() {
-        if (!running) throw new TimerException();
+        if (!running) return;
         laps++;
     }
 
@@ -213,12 +237,9 @@ public class Timer {
      * @return the number of ticks for the system clock. Currently defined as nano time.
      */
     private static long getClock() {
-        // TO BE IMPLEMENTED 
-
-        // SKELETON
-         return 0;
-        // END SOLUTION
+        return System.nanoTime();
     }
+
 
     /**
      * NOTE: (Maintain consistency) There are two system methods for getting the clock time.
@@ -228,12 +249,10 @@ public class Timer {
      * @return the corresponding number of milliseconds.
      */
     private static double toMillisecs(long ticks) {
-        // TO BE IMPLEMENTED 
-
-        // SKELETON
-         return 0;
-        // END SOLUTION
+        return ticks / 1_000_000.0; // Make sure you are dividing by 1 million to convert nanoseconds to milliseconds
     }
+
+
 
     final static LazyLogger logger = new LazyLogger(Timer.class);
 

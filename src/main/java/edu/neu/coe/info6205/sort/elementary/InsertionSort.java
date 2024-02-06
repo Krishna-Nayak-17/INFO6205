@@ -1,5 +1,5 @@
 /*
-  (c) Copyright 2018, 2019 Phasmid Software
+ * (c) Copyright 2018, 2019 Phasmid Software
  */
 package edu.neu.coe.info6205.sort.elementary;
 
@@ -60,16 +60,28 @@ public class InsertionSort<X extends Comparable<X>> extends SortWithHelper<X> {
      * @param from the index of the first element to sort
      * @param to   the index of the first element not to sort
      */
+    @Override
     public void sort(X[] xs, int from, int to) {
         final Helper<X> helper = getHelper();
 
-        // TO BE IMPLEMENTED 
+        for (int i = from + 1; i < to; i++) {
+            X current = xs[i];
+            int j = i - 1;
+            int inversionCount = 0;
 
+            while (j >= from && helper.compare(xs[j], current) > 0) {
+                xs[j + 1] = xs[j];
+                j--;
+                inversionCount++;
+            }
+            xs[j + 1] = current;
 
-
-
-throw new RuntimeException("implementation missing");
+            // Update inversion count for the current element
+            helper.incrementFixes(inversionCount);
+        }
     }
+
+
 
     public static final String DESCRIPTION = "Insertion sort";
 
