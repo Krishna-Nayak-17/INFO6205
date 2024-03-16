@@ -7,35 +7,17 @@ import edu.neu.coe.info6205.util.Config;
 
 import java.util.Arrays;
 
-/**
- * Class MergeSort.
- *
- * @param <X> the underlying comparable type.
- */
 public class MergeSort<X extends Comparable<X>> extends SortWithHelper<X> {
+    private final InsertionSort<X> insertionSort;
+    private static final int CUTOFF = 7; // Cutoff to switch to insertion sort
 
-    public static final String DESCRIPTION = "MergeSort";
-
-    /**
-     * Constructor for MergeSort
-     * <p>
-     * NOTE this is used only by unit tests, using its own instrumented helper.
-     *
-     * @param helper an explicit instance of Helper to be used.
-     */
     public MergeSort(Helper<X> helper) {
         super(helper);
         insertionSort = new InsertionSort<>(helper);
     }
 
-    /**
-     * Constructor for MergeSort
-     *
-     * @param N      the number elements we expect to sort.
-     * @param config the configuration.
-     */
     public MergeSort(int N, Config config) {
-        super(DESCRIPTION + ":" + getConfigString(config), N, config);
+        super(DESCRIPTION + getConfigString(config), N, config);
         insertionSort = new InsertionSort<>(getHelper());
     }
 
@@ -43,64 +25,45 @@ public class MergeSort<X extends Comparable<X>> extends SortWithHelper<X> {
     public X[] sort(X[] xs, boolean makeCopy) {
         getHelper().init(xs.length);
         X[] result = makeCopy ? Arrays.copyOf(xs, xs.length) : xs;
-        sort(result, 0, result.length);
+        X[] aux = Arrays.copyOf(result, result.length);
+        sort(result, aux, 0, result.length - 1);
         return result;
     }
 
     @Override
-    public void sort(X[] a, int from, int to) {
-        // CONSIDER don't copy but just allocate according to the xs/aux interchange optimization
-        X[] aux = Arrays.copyOf(a, a.length);
-        sort(a, aux, from, to);
+    public void sort(X[] array, int from, int to) {
+        // Ensure valid range
+        if (from < 0 || to > array.length || from >= to) {
+            throw new IllegalArgumentException("Invalid range specified");
+        }
+        X[] aux = Arrays.copyOf(array, array.length);
+        sort(array, aux, from, to - 1); // Adjust for exclusive upper bound
     }
 
-    private void sort(X[] a, X[] aux, int from, int to) {
-        final Helper<X> helper = getHelper();
-        Config config = helper.getConfig();
-        boolean insurance = config.getBoolean(MERGESORT, INSURANCE);
-        boolean noCopy = config.getBoolean(MERGESORT, NOCOPY);
-        if (to <= from + helper.cutoff()) {
-            insertionSort.sort(a, from, to);
+    private void sort(X[] a, X[] aux, int low, int high) {
+        if (high <= low + CUTOFF - 1) {
+            insertionSort.sort(a, low, high + 1); // Adjust for exclusive upper bound in InsertionSort
             return;
         }
-
-        // TO BE IMPLEMENTED  : implement merge sort with insurance and no-copy optimizations
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-throw new RuntimeException("implementation missing");
+        int mid = low + (high - low) / 2;
+        sort(aux, a, low, mid);
+        sort(aux, a, mid + 1, high);
+        if (!getHelper().less(aux[mid + 1], aux[mid])) { // Optimization: check if already sorted
+            System.arraycopy(aux, low, a, low, high - low + 1);
+            return;
+        }
+        merge(a, aux, low, mid, high);
     }
 
-    // CONSIDER combine with MergeSortBasic perhaps.
-    private void merge(X[] sorted, X[] result, int from, int mid, int to) {
-        final Helper<X> helper = getHelper();
-        int i = from;
-        int j = mid;
-        for (int k = from; k < to; k++)
-            if (i >= mid) helper.copy(sorted, j++, result, k);
-            else if (j >= to) helper.copy(sorted, i++, result, k);
-            else if (helper.less(sorted[j], sorted[i])) {
-                helper.incrementFixes(mid - i);
-                helper.copy(sorted, j++, result, k);
-            } else helper.copy(sorted, i++, result, k);
+    private void merge(X[] a, X[] aux, int low, int mid, int high) {
+        int i = low, j = mid + 1;
+        for (int k = low; k <= high; k++) {
+            if (i > mid) a[k] = aux[j++];
+            else if (j > high) a[k] = aux[i++];
+            else if (getHelper().less(aux[j], aux[i])) a[k] = aux[j++];
+            else a[k] = aux[i++];
+        }
     }
-
-    public static final String MERGESORT = "mergesort";
-    public static final String NOCOPY = "nocopy";
-    public static final String INSURANCE = "insurance";
 
     private static String getConfigString(Config config) {
         StringBuilder stringBuilder = new StringBuilder();
@@ -109,5 +72,8 @@ throw new RuntimeException("implementation missing");
         return stringBuilder.toString();
     }
 
-    private final InsertionSort<X> insertionSort;
+    private static final String DESCRIPTION = "MergeSort";
+    public static final String MERGESORT = "mergesort";
+    public static final String NOCOPY = "nocopy";
+    public static final String INSURANCE = "insurance";
 }

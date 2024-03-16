@@ -71,6 +71,7 @@ public abstract class QuickSort<X extends Comparable<X>> extends SortWithHelper<
         partitions.forEach(p -> sort(p.xs, p.from, p.to, depth + 1));
     }
 
+
     /**
      * Sort the sub-array xs[from] ... xs[to-1]
      *
@@ -93,13 +94,13 @@ public abstract class QuickSort<X extends Comparable<X>> extends SortWithHelper<
      * @return true if there is no further work to be done.
      */
     protected boolean terminator(X[] xs, int from, int to, int depth) {
-        // NOTE: we reduce the cutoff by 1 so that we can use 1 to disable cutoff (because 0 gives the default of 7).
         if (to <= from + getHelper().cutoff() - 1) {
             insertionSort.sort(xs, from, to);
             return true;
         }
         return false;
     }
+
 
     public InsertionSort<X> getInsertionSort() {
         return insertionSort;
